@@ -4,5 +4,4 @@ FPDF
 requests
 BeautifulSoup
 datetime
-io
 plotly.express
