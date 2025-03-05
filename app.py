@@ -1,10 +1,9 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 from fpdf import FPDF
 import requests
-from bs4 import BeautifulSoup
 import sys
+from bs4 import BeautifulSoup
 from datetime import datetime
 import io
 import plotly.express as px
@@ -61,7 +60,7 @@ if st.button("🔄 Actualiser le prix de l'or"):
 
 gold_price = get_gold_price()
 
-col1, col2 = st.columns(2)
+col1, col2 = st.columns([1, 1])
 with col1:
     st.write(f"🏅 Prix actuel de l'or : {gold_price:.2f} €/g")
 with col2:
