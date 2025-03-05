@@ -1,10 +1,7 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 from fpdf import FPDF
 import requests
-from bs4 import BeautifulSoup
-import sys
 from datetime import datetime
 import io
 import plotly.express as px
