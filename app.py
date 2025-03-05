@@ -2,22 +2,119 @@ import streamlit as st
 import pandas as pd
 from fpdf import FPDF
 import requests
-import sys
 from bs4 import BeautifulSoup
 from datetime import datetime
 import io
 import plotly.express as px
 
+
 st.set_page_config(page_title="Calculateur de Zakat", page_icon="🕌", layout="wide")
 
-st.markdown("""
-## Calculateur de Zakat
-Ce calculateur vous permet de déterminer le montant de la Zakat à payer en fonction de vos actifs. \n
-Entrez vos actifs et dettes dans les champs ci-dessous, puis cliquez sur "Calculer la Zakat" pour voir les résultats.
-""")
+# Fonction pour changer le texte selon la langue
+def set_language(language):
+    if language == "English":
+        return {
+            "selectLang": "Select language",
+            "title": "🕌 Zakat Calculator",
+            "intro": "This calculator helps you determine the amount of Zakat you need to pay based on your assets.\nEnter your assets and debts below, then click 'Calculate Zakat' to see the results.",
+            "cash": "Cash",
+            "gold_value": "Gold and silver value",
+            "investments": "Investments (stocks, crypto, etc.)",
+            "real_estate": "Real estate for resale",
+            "debts": "Immediate debts",
+            "calculate_zakat": "Calculate Zakat",
+            "result": "Result",
+            "total_assets": "Total subject to Zakat",
+            "nisab": "Current Nisab threshold",
+            "zakat_due": "Zakat due",
+            "not_due": "You are not liable for Zakat this year",
+            "download_pdf": "Download PDF",
+            "download_excel": "Download Excel",
+            "compare_assets": "Assets vs Nisab Comparison",
+            "refresh_gold_price": "Refresh Gold Price",
+            "last_update": "Last Update",
+            "zakat_chart_title": "Assets vs Nisab Comparison"
+        }
+    elif language == "العربية":  # Ajuster pour un affichage correct en arabe
+        return {
+            "selectLang": "العربية",
+            "title": "🕌 حاسبة الزكاة",
+            "intro": "تساعدك هذه الآلة الحاسبة في تحديد مقدار الزكاة الذي يجب دفعه بناءً على أصولك.\nأدخل أصولك وديونك أدناه، ثم انقر على 'احسب الزكاة' لعرض النتائج.",
+            "cash": "نقد",
+            "gold_value": "قيمة الذهب والفضة",
+            "investments": "الاستثمارات (الأسهم، العملات المشفرة، إلخ)",
+            "real_estate": "العقارات للبيع",
+            "debts": "الديون الفورية",
+            "calculate_zakat": "احسب الزكاة",
+            "result": "النتيجة",
+            "total_assets": "إجمالي الأصول الخاضعة للزكاة",
+            "nisab": "الحد الأدنى للنصاب",
+            "zakat_due": "الزكاة المستحقة",
+            "not_due": "أنت لست ملزمًا بدفع الزكاة هذه السنة",
+            "download_pdf": "تحميل PDF",
+            "download_excel": "تحميل Excel",
+            "compare_assets": "مقارنة الأصول مع النصاب",
+            "refresh_gold_price": "تحديث سعر الذهب",
+            "last_update": "آخر تحديث",
+            "zakat_chart_title": "مقارنة الأصول مع النصاب"
+        }
+    else:  # Français par défaut
+        return {
+            "selectLang": "Sélectionner la langue",
+            "title": "🕌 Calculateur de Zakat",
+            "intro": "Ce calculateur vous permet de déterminer le montant de la Zakat à payer en fonction de vos actifs.\nEntrez vos actifs et dettes dans les champs ci-dessous, puis cliquez sur 'Calculer la Zakat' pour voir les résultats.",
+            "cash": "Argent liquide",
+            "gold_value": "Valeur de l'or et de l'argent",
+            "investments": "Investissements (actions, crypto, etc.)",
+            "real_estate": "Biens destinés à la revente",
+            "debts": "Dettes immédiates",
+            "calculate_zakat": "Calculer la Zakat",
+            "result": "Résultat",
+            "total_assets": "Total soumis à la Zakat",
+            "nisab": "Seuil du Nisab actuel",
+            "zakat_due": "Zakat due",
+            "not_due": "Vous n'êtes pas redevable de la Zakat cette année",
+            "download_pdf": "Télécharger PDF",
+            "download_excel": "Télécharger Excel",
+            "compare_assets": "Comparaison Actifs vs Nisab",
+            "refresh_gold_price": "Actualiser le prix de l'or",
+            "last_update": "Dernière mise à jour",
+            "zakat_chart_title": "Comparaison Actifs vs Nisab"
+        }
+
+# Utiliser un selectbox avec des options visuelles (icônes)
+language = st.selectbox(
+    "Sélectionner la langue",
+    ["Français 🇫🇷", "English 🇬🇧", "العربية 🇸🇦"],
+    format_func=lambda x: x.split(" ")[0]  # Affiche juste le texte, sans les icônes
+)
+
+# Extraire la langue sélectionnée (en retirant l'emoji)
+selected_language = language.split(" ")[0]
+translations = set_language(selected_language)
 
 
-st.title("🕌 Calculateur de Zakat")
+# Appliquer du CSS personnalisé pour l'alignement à droite en arabe
+if selected_language == "العربية":
+    st.markdown("""
+        <style>
+            body {
+                direction: rtl;
+                text-align: right;
+                }
+            .css-1v3fvcr {
+                direction: rtl;
+                text-align: right;
+            }
+            .css-1u9tbx2 {
+                direction: rtl;
+                text-align: right;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+st.markdown(f"## {translations['title']}")
+st.markdown(translations['intro'])
 
 prixParDefaut = 87
 last_update = None  # Variable pour stocker la date et l'heure de la dernière mise à jour
@@ -54,18 +151,21 @@ def get_gold_price():
     except Exception:
         return prixParDefaut
 
-if st.button("🔄 Actualiser le prix de l'or"):
+# Actualiser le prix
+if st.button(f"🔄 {translations['refresh_gold_price']}"):
     gold_price = get_gold_price()
     st.rerun()
 
 gold_price = get_gold_price()
 
-col1, col2 = st.columns([1, 1])
+col1, col2 = st.columns([1, 5])
 with col1:
-    st.write(f"🏅 Prix actuel de l'or : {gold_price:.2f} €/g")
+    # Affiche la valeur actuelle de l'or en gramme
+    st.write(f"🏅 {translations['gold_value']} : {gold_price:.2f} €/g")
 with col2:
     if last_update:
-        st.write(f"🕒 Dernière mise à jour : {last_update}")
+        # Affiche la derniere date de refresh
+        st.write(f"🕒 {translations['last_update']} : {last_update}")
 
 nisab = gold_price * 85
 
@@ -75,72 +175,67 @@ if st.session_state.get("viewport_width", 800) < 600:
 else:
     sidebar = st
 
+with st.expander(f"💰 {translations['cash']}", expanded=True):
+    cash = sidebar.number_input(f"💰 {translations['cash']}", min_value=0.0, format="%.2f")
+    gold = sidebar.number_input(f"🏅 {translations['gold_value']}", min_value=0.0, format="%.2f")
+    investments = sidebar.number_input(f"📈 {translations['investments']}", min_value=0.0, format="%.2f")
+    real_estate_resale = sidebar.number_input(f"🏠 {translations['real_estate']}", min_value=0.0, format="%.2f")
 
-sidebar.header("💰 Entrer vos actifs")
+    sidebar.header(f"💳 {translations['debts']}")
+    debts = sidebar.number_input(f"💳 {translations['debts']}", min_value=0.0, format="%.2f")
 
-cash = sidebar.number_input("💰 Argent liquide", min_value=0.0, format="%.2f")
-gold = sidebar.number_input("🏅 Valeur de l'or et de l'argent", min_value=0.0, format="%.2f")
-investments = sidebar.number_input("📈 Investissements (actions, crypto, etc.)", min_value=0.0, format="%.2f")
-real_estate_resale = sidebar.number_input("🏠 Biens destinés à la revente", min_value=0.0, format="%.2f")
+# Fonction pour générer le fichier Excel avec les résultats
+def generate_excel(total_assets, nisab, zakat_due, last_update, gold_price, cash, gold, investments, real_estate_resale, debts):
+    # Créer un DataFrame avec les informations pertinentes
+    data = {
+        "Description": ["Total Assets", "Nisab", "Zakat Due", "Last Update", "Gold Price", "Cash", "Gold", "Investments", "Real Estate Resale", "Debts"],
+        "Amount (€)": [total_assets, nisab, zakat_due, last_update, gold_price, cash, gold, investments, real_estate_resale, debts]
+    }
+    
+    df = pd.DataFrame(data)
+    
+    # Création du fichier Excel en mémoire
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False, sheet_name="Zakat Calculation")
+    output.seek(0)
 
-sidebar.header("💳 Déduire vos dettes")
-debts = sidebar.number_input("💳 Dettes immédiates", min_value=0.0, format="%.2f")
+    return output
 
+# Initialisation des variables AVANT la condition
+total_assets = 0
+zakat_due = 0  # On initialise zakat_due ici pour éviter le NameError
 
 # Bouton placé juste après le dernier champ
 if cash > 0 or gold > 0 or investments > 0 or real_estate_resale > 0 or debts > 0:
-    if sidebar.button("📊 Calculez la Zakat"):
+    if sidebar.button(f"📊 {translations['calculate_zakat']}"):
         total_assets = cash + gold + investments + real_estate_resale - debts
-        st.subheader("📊 Résultat du calcul")
-        st.write(f"Total soumis à la Zakat : **{total_assets:.2f} €**")
-        st.write(f"📏 Seuil du Nisab actuel : **{nisab:.2f} €**")
+        st.subheader(f"📊 {translations['result']}")
+        st.write(f"{translations['total_assets']} : **{total_assets:.2f} €**")
+        st.write(f"📏 {translations['nisab']} : **{nisab:.2f} €**")
         if total_assets >= nisab:
             zakat_due = total_assets * 0.025
-            st.success(f"✅ Tu dois payer **{zakat_due:.2f} €** de Zakat.")
+            st.success(f"✅ {translations['zakat_due']} : **{zakat_due:.2f} €**")
         else:
-            st.warning("❌ Tu n'es pas redevable de la Zakat cette année.")
+            st.warning(f"❌ {translations['not_due']}")
+
+        st.subheader(f"📊 {translations['compare_assets']}")
         
-        st.subheader("📊 Comparaison Actifs vs Nisab")
-        
-        # Affiche le graphique
-        fig = px.bar(x=["Total Actifs", "Nisab"], y=[total_assets, nisab], 
-            labels={"x": "Catégorie", "y": "Montant (€)"}, 
-            title="Comparaison Actifs vs Nisab")
+        # Affiche le graphique avec titre traduit
+        fig = px.bar(x=[translations['total_assets'], translations['nisab']], y=[total_assets, nisab], 
+            labels={"x": translations['total_assets'], "y": "Montant (€)"}, 
+            title=translations['zakat_chart_title'])
         st.plotly_chart(fig)
+        
+        # Générer le fichier Excel avec les résultats
+        excel_file = generate_excel(total_assets, nisab, zakat_due, last_update, gold_price, cash, gold, investments, real_estate_resale, debts)
 
-        def generate_pdf(total_assets, nisab, zakat_due):
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font("Arial", size=14)
-            pdf.cell(200, 10, "Rapport de Calcul de la Zakat", ln=True, align="C")
-            pdf.ln(10)
-            pdf.set_font("Arial", size=12)
-            pdf.cell(200, 10, f"Total soumis à la Zakat : {total_assets:.2f} €", ln=True)
-            pdf.cell(200, 10, f"Seuil du Nisab : {nisab:.2f} €", ln=True)
-            if total_assets >= nisab:
-                pdf.cell(200, 10, f"Zakat due : {zakat_due:.2f} €", ln=True)
-            else:
-                pdf.cell(200, 10, "Vous n'êtes pas redevable de la Zakat cette année.", ln=True)
-            pdf.output("zakat_report.pdf")
-
-        if st.button("📄 Générer un rapport PDF"):
-            generate_pdf(total_assets, nisab, zakat_due)
-            with open("zakat_report.pdf", "rb") as file:
-                st.download_button("📥 Télécharger le PDF", file, file_name="zakat_report.pdf")
-                
-        def generate_excel_report(total_assets, nisab, zakat_due):
-            df = pd.DataFrame({
-                "Description": ["Total soumis à la Zakat", "Seuil du Nisab", "Zakat due"],
-                "Montant (€)": [total_assets, nisab, zakat_due if total_assets >= nisab else "N/A"]
-            })
-            output = io.BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df.to_excel(writer, index=False, sheet_name="Zakat Report")
-            output.seek(0)
-            return output
-
-        if st.button("📄 Générer un rapport Excel"):
-            excel_file = generate_excel_report(total_assets, nisab, zakat_due)
-            st.download_button("📥 Télécharger le fichier Excel", excel_file, file_name="zakat_report.xlsx")
+        # Bouton pour télécharger le fichier Excel, placé après le calcul des actifs
+        st.download_button(
+            label=f"📥 {translations['download_excel']}",
+            data=excel_file,
+            file_name="zakat_data.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 else:
-    sidebar.warning("❌ Veuillez remplir au moins un champ avant de calculer la Zakat.")
+    sidebar.warning(f"❌ {translations['not_due']}")
