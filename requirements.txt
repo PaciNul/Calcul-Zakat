@@ -1,10 +1,8 @@
 streamlit
 pandas
-matplotlib
 FPDF
 requests
 BeautifulSoup
-sys
 datetime
 io
 plotly.express
