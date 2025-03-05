@@ -1,7 +1,7 @@
 streamlit
 pandas
 FPDF
-BeautifulSoup
+beautifulsoup4
 requests
 datetime
 plotly.express
