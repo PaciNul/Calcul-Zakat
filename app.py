@@ -158,7 +158,7 @@ if st.button(f"🔄 {translations['refresh_gold_price']}"):
 
 gold_price = get_gold_price()
 
-col1, col2 = st.columns([1, 5])
+col1, col2 = st.columns(2)
 with col1:
     # Affiche la valeur actuelle de l'or en gramme
     st.write(f"🏅 {translations['gold_value']} : {gold_price:.2f} €/g")
