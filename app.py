@@ -17,6 +17,7 @@ def set_language(language):
             "selectLang": "Select language",
             "title": "🕌 Zakat Calculator",
             "intro": "This calculator helps you determine the amount of Zakat you need to pay based on your assets.\nEnter your assets and debts below, then click 'Calculate Zakat' to see the results.",
+            "TitleActif": "Enter your assets",
             "cash": "Cash",
             "gold_value": "Gold and silver value",
             "investments": "Investments (stocks, crypto, etc.)",
@@ -40,6 +41,7 @@ def set_language(language):
             "selectLang": "العربية",
             "title": "🕌 حاسبة الزكاة",
             "intro": "تساعدك هذه الآلة الحاسبة في تحديد مقدار الزكاة الذي يجب دفعه بناءً على أصولك.\nأدخل أصولك وديونك أدناه، ثم انقر على 'احسب الزكاة' لعرض النتائج.",
+            "TitleActif": "أدخل أصولك",
             "cash": "نقد",
             "gold_value": "قيمة الذهب والفضة",
             "investments": "الاستثمارات (الأسهم، العملات المشفرة، إلخ)",
@@ -63,6 +65,7 @@ def set_language(language):
             "selectLang": "Sélectionner la langue",
             "title": "🕌 Calculateur de Zakat",
             "intro": "Ce calculateur vous permet de déterminer le montant de la Zakat à payer en fonction de vos actifs.\nEntrez vos actifs et dettes dans les champs ci-dessous, puis cliquez sur 'Calculer la Zakat' pour voir les résultats.",
+            "TitleActif": "Entrer vos actifs",
             "cash": "Argent liquide",
             "gold_value": "Valeur de l'or et de l'argent",
             "investments": "Investissements (actions, crypto, etc.)",
@@ -158,7 +161,7 @@ if st.button(f"🔄 {translations['refresh_gold_price']}"):
 
 gold_price = get_gold_price()
 
-col1, col2 = st.columns([1, 5])
+col1, col2 = st.columns(2)
 with col1:
     # Affiche la valeur actuelle de l'or en gramme
     st.write(f"🏅 {translations['gold_value']} : {gold_price:.2f} €/g")
@@ -175,14 +178,15 @@ if st.session_state.get("viewport_width", 800) < 600:
 else:
     sidebar = st
 
-with st.expander(f"💰 {translations['cash']}", expanded=True):
-    cash = sidebar.number_input(f"💰 {translations['cash']}", min_value=0.0, format="%.2f")
-    gold = sidebar.number_input(f"🏅 {translations['gold_value']}", min_value=0.0, format="%.2f")
-    investments = sidebar.number_input(f"📈 {translations['investments']}", min_value=0.0, format="%.2f")
-    real_estate_resale = sidebar.number_input(f"🏠 {translations['real_estate']}", min_value=0.0, format="%.2f")
+with st.expander(f"💰 {translations['TitleActif']}", expanded=True):
+    #cash = sidebar.number_input(f"💰 {translations['cash']}", min_value=0.0, format="%.2f")
+    cash = sidebar.number_input(f"💰 {translations['cash']}", min_value=0.0, format="%.2f", help="Entrez le montant en euros")
+    gold = sidebar.number_input(f"🏅 {translations['gold_value']}", min_value=0.0, format="%.2f", help="Valeur actuelle totale de l'or possédé")
+    investments = sidebar.number_input(f"📈 {translations['investments']}", min_value=0.0, format="%.2f", help="Total des investissements (actions, crypto, etc.)")
+    real_estate_resale = sidebar.number_input(f"🏠 {translations['real_estate']}", min_value=0.0, format="%.2f", help="Valeur des biens destinés à la revente")
 
     sidebar.header(f"💳 {translations['debts']}")
-    debts = sidebar.number_input(f"💳 {translations['debts']}", min_value=0.0, format="%.2f")
+    debts = sidebar.number_input(f"💳 {translations['debts']}", min_value=0.0, format="%.2f", help="Montant total des dettes immédiates")
 
 # Fonction pour générer le fichier Excel avec les résultats
 def generate_excel(total_assets, nisab, zakat_due, last_update, gold_price, cash, gold, investments, real_estate_resale, debts):
@@ -222,9 +226,14 @@ if cash > 0 or gold > 0 or investments > 0 or real_estate_resale > 0 or debts > 
         st.subheader(f"📊 {translations['compare_assets']}")
         
         # Affiche le graphique avec titre traduit
-        fig = px.bar(x=[translations['total_assets'], translations['nisab']], y=[total_assets, nisab], 
-            labels={"x": translations['total_assets'], "y": "Montant (€)"}, 
-            title=translations['zakat_chart_title'])
+        #fig = px.bar(x=[translations['total_assets'], translations['nisab']], y=[total_assets, nisab], 
+         #   labels={"x": translations['total_assets'], "y": "Montant (€)"}, 
+         #   title=translations['zakat_chart_title'])
+        #st.plotly_chart(fig)
+        
+        # Graphique interactif
+        df = pd.DataFrame({"Catégorie": [translations['total_assets'], translations['nisab']], "Valeur": [total_assets, nisab]})
+        fig = px.bar(df, x="Catégorie", y="Valeur", title=translations['zakat_chart_title'], text_auto=True)
         st.plotly_chart(fig)
         
         # Générer le fichier Excel avec les résultats
