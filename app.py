@@ -99,16 +99,50 @@ st.markdown(
     <style>
         //Cacher les icone de streamlit
         #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
+        footer, header {visibility: hidden;}
         
-        .st-emotion-cache-gi0tri {
+        ._container_gzau3_1, ._profileContainer_gzau3_53, .st-emotion-cache-gi0tri {
             display: none;
         }
+        
         .st-emotion-cache-mtjnbi {
             padding: 2rem 1rem 10rem;
         }
-      
+     
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 6vw;
+            }
+        }
+
+        /* ======= BOUTONS ======= 
+        .stButton>button {
+            width: 100%;
+            font-size: 1rem;
+            padding: 10px;
+        }*/
+
+        /* ======= TABLEAUX ======= */
+        .dataframe {
+            overflow-x: auto;
+        }
+
+        /* ======= INPUTS ======= */
+        .stTextInput, .stNumberInput, .stSelectbox {
+            width: 100%;
+        }
+
+        /* ======= RESPONSIVE POUR MOBILE ======= */
+        @media (max-width: 600px) {
+            html, body, [class*="st-emotion-cache"] {
+                font-size: 3vw;
+            }
+            
+            .stButton>button {
+                font-size: 4vw;
+            }
+        }
         .language-selector {
             position: absolute;
             top: -10px;
