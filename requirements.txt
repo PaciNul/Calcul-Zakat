@@ -6,3 +6,5 @@ requests
 datetime
 plotly.express
 xlsxwriter
+yfinance
+Image

@@ -6,21 +6,29 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import io
 import plotly.express as px
+from PIL import Image
+import yfinance as yf
 
 
-st.set_page_config(page_title="Calculateur de Zakat", page_icon="🕌", layout="wide")
+st.set_page_config(page_title="Calculateur de Zakat", page_icon="🕌", layout="centered")
+
+# Détecter si le format est mobile
+if st.session_state.get("viewport_width", 800) < 600:
+    sidebar = st.sidebar
+else:
+    sidebar = st
 
 # Fonction pour changer le texte selon la langue
 def set_language(language):
     if language == "English":
         return {
             "selectLang": "Select language",
-            "title": "🕌 Zakat Calculator",
+            "title": "🕌 Zakat Calculator 🕌",
             "intro": "This calculator helps you determine the amount of Zakat you need to pay based on your assets.\nEnter your assets and debts below, then click 'Calculate Zakat' to see the results.",
             "TitleActif": "Enter your assets",
             "cash": "Cash",
-            "gold_value": "Gold and silver value",
-            "investments": "Investments (stocks, crypto, etc.)",
+            "gold_value": "Current gold value",
+            "investments": "Investments",
             "real_estate": "Real estate for resale",
             "debts": "Immediate debts",
             "calculate_zakat": "Calculate Zakat",
@@ -39,12 +47,12 @@ def set_language(language):
     elif language == "العربية":  # Ajuster pour un affichage correct en arabe
         return {
             "selectLang": "العربية",
-            "title": "🕌 حاسبة الزكاة",
+            "title": "🕌 حاسبة الزكاة 🕌",
             "intro": "تساعدك هذه الآلة الحاسبة في تحديد مقدار الزكاة الذي يجب دفعه بناءً على أصولك.\nأدخل أصولك وديونك أدناه، ثم انقر على 'احسب الزكاة' لعرض النتائج.",
             "TitleActif": "أدخل أصولك",
             "cash": "نقد",
-            "gold_value": "قيمة الذهب والفضة",
-            "investments": "الاستثمارات (الأسهم، العملات المشفرة، إلخ)",
+            "gold_value": "القيمة الحالية للذهب",
+            "investments": "الاستثمارات)",
             "real_estate": "العقارات للبيع",
             "debts": "الديون الفورية",
             "calculate_zakat": "احسب الزكاة",
@@ -63,12 +71,12 @@ def set_language(language):
     else:  # Français par défaut
         return {
             "selectLang": "Sélectionner la langue",
-            "title": "🕌 Calculateur de Zakat",
+            "title": "🕌 Calculateur de Zakat 🕌",
             "intro": "Ce calculateur vous permet de déterminer le montant de la Zakat à payer en fonction de vos actifs.\nEntrez vos actifs et dettes dans les champs ci-dessous, puis cliquez sur 'Calculer la Zakat' pour voir les résultats.",
             "TitleActif": "Entrer vos actifs",
             "cash": "Argent liquide",
-            "gold_value": "Valeur de l'or et de l'argent",
-            "investments": "Investissements (actions, crypto, etc.)",
+            "gold_value": "Valeur actuelle de l'or",
+            "investments": "Investissements",
             "real_estate": "Biens destinés à la revente",
             "debts": "Dettes immédiates",
             "calculate_zakat": "Calculer la Zakat",
@@ -85,15 +93,62 @@ def set_language(language):
             "zakat_chart_title": "Comparaison Actifs vs Nisab"
         }
 
-# Utiliser un selectbox avec des options visuelles (icônes)
-language = st.selectbox(
-    "Sélectionner la langue",
-    ["Français 🇫🇷", "English 🇬🇧", "العربية 🇸🇦"],
-    format_func=lambda x: x.split(" ")[0]  # Affiche juste le texte, sans les icônes
+# HTML et CSS pour afficher les drapeaux en haut à droite
+st.markdown(
+    """
+    <style>
+        //Cacher les icone de streamlit
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+        
+        .st-emotion-cache-gi0tri {
+            display: none;
+        }
+        .st-emotion-cache-mtjnbi {
+            padding: 2rem 1rem 10rem;
+        }
+      
+        .language-selector {
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        .flag-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+    <div class="language-selector">
+        <form action="" method="get">
+            <button class="flag-button" name="lang" value="Français">
+                <img src="https://flagcdn.com/20x15/fr.png">
+            </button>
+            <button class="flag-button" name="lang" value="English">
+                <img src="https://flagcdn.com/20x15/gb.png">
+            </button>
+            <button class="flag-button" name="lang" value="العربية">
+                <img src="https://flagcdn.com/20x15/sa.png">
+            </button>
+        </form>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
 
-# Extraire la langue sélectionnée (en retirant l'emoji)
-selected_language = language.split(" ")[0]
+# Récupérer la langue sélectionnée
+#query_params = st.experimental_get_query_params()
+
+# Récupérer la langue sélectionnée depuis les paramètres de l'URL
+lang_list = st.query_params.get_all("lang")
+
+# Vérifier si la liste est vide et définir une langue par défaut
+selected_language = lang_list[0] if lang_list else "Français"
+
+# Récupérer les traductions selon la langue choisie
 translations = set_language(selected_language)
 
 
@@ -116,38 +171,21 @@ if selected_language == "العربية":
         </style>
     """, unsafe_allow_html=True)
 
-st.markdown(f"## {translations['title']}")
+st.markdown(f" <p style='text-align: center; font-size: 2.3rem'>{translations['title']}</p>", unsafe_allow_html=True)
 st.markdown(translations['intro'])
 
 prixParDefaut = 87
-last_update = None  # Variable pour stocker la date et l'heure de la dernière mise à jour
+last_update = datetime.now().strftime("%d/%m/%Y %H:%M:%S")  # Met à jour la date et l'heure
 
 def get_gold_price():
-    global last_update
-    url = "https://www.bullion-rates.com/gold/EUR/spot-price.htm"
-    headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
-    }
-    
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        gold = yf.Ticker("GC=F")  # Futures Or (Gold)
+        gold_price = gold.history(period="1d")["Close"].iloc[-1]
         
-        if response.status_code != 200:
-            return prixParDefaut
-
-        soup = BeautifulSoup(response.text, "html.parser")
-        price_element = soup.find("td", class_="rate")
-        if not price_element:
-            price_element = soup.find("td", {"id": "gold-price"})
-        
-        if price_element:
-            price_text = price_element.text.strip()
-            gold_price_per_ounce = price_text.replace(" ", "")
-            gold_price_per_ounce2 = float(gold_price_per_ounce.replace(",", "."))
-            last_update = datetime.now().strftime("%d/%m/%Y %H:%M:%S")  # Met à jour la date et l'heure
-            return gold_price_per_ounce2 / 31.1035
-        else:
-            return prixParDefaut
+        # Convertir en EUR si nécessaire
+        eur_usd = yf.Ticker("EURUSD=X").history(period="1d")["Close"].iloc[-1]
+        gold_price_eur = gold_price / eur_usd  # Convertir USD → EUR
+        return round(gold_price_eur / 31.1035, 2)  # Prix par gramme en EUR
 
     except requests.exceptions.RequestException:
         return prixParDefaut
@@ -172,15 +210,10 @@ with col2:
 
 nisab = gold_price * 85
 
-# Détecter si le format est mobile
-if st.session_state.get("viewport_width", 800) < 600:
-    sidebar = st.sidebar
-else:
-    sidebar = st
 
 with st.expander(f"💰 {translations['TitleActif']}", expanded=True):
     #cash = sidebar.number_input(f"💰 {translations['cash']}", min_value=0.0, format="%.2f")
-    cash = sidebar.number_input(f"💰 {translations['cash']}", min_value=0.0, format="%.2f", help="Entrez le montant en euros")
+    cash = sidebar.number_input(f"💰 {translations['cash']}", min_value=0.0, format="%.2f", help="Argent en votre possession")
     gold = sidebar.number_input(f"🏅 {translations['gold_value']}", min_value=0.0, format="%.2f", help="Valeur actuelle totale de l'or possédé")
     investments = sidebar.number_input(f"📈 {translations['investments']}", min_value=0.0, format="%.2f", help="Total des investissements (actions, crypto, etc.)")
     real_estate_resale = sidebar.number_input(f"🏠 {translations['real_estate']}", min_value=0.0, format="%.2f", help="Valeur des biens destinés à la revente")
@@ -233,7 +266,14 @@ if cash > 0 or gold > 0 or investments > 0 or real_estate_resale > 0 or debts > 
         
         # Graphique interactif
         df = pd.DataFrame({"Catégorie": [translations['total_assets'], translations['nisab']], "Valeur": [total_assets, nisab]})
-        fig = px.bar(df, x="Catégorie", y="Valeur", title=translations['zakat_chart_title'], text_auto=True)
+        fig = px.bar(df, x="Catégorie", y="Valeur", title=translations['zakat_chart_title'], text_auto='.2f')
+        fig.update_layout(
+            font=dict(
+                color="white",
+                family="Courier New, monospace",
+                size=18  # Set the font size here
+            )
+        )
         st.plotly_chart(fig)
         
         # Générer le fichier Excel avec les résultats
