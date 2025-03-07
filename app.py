@@ -28,6 +28,7 @@ def set_language(language):
             "TitleActif": "Enter your assets",
             "cash": "Cash",
             "gold_value": "Current gold value",
+            "gold_have": "Physical gold held",
             "investments": "Investments",
             "real_estate": "Real estate for resale",
             "debts": "Immediate debts",
@@ -59,6 +60,7 @@ def set_language(language):
             "TitleActif": "أدخل أصولك",
             "cash": "نقد",
             "gold_value": "القيمة الحالية للذهب",
+            "gold_have": "الذهب المادي المحتفظ به",
             "investments": "الاستثمارات",
             "real_estate": "العقارات للبيع",
             "debts": "الديون الفورية",
@@ -87,12 +89,13 @@ def set_language(language):
             "selectLang": "Sélectionner la langue",
             "title": "🕌 Calculateur de Zakat 🕌",
             "intro": "Ce calculateur vous permet de déterminer le montant de la Zakat à payer en fonction de vos actifs.\nEntrez vos actifs et dettes dans les champs ci-dessous, puis cliquez sur 'Calculer la Zakat' pour voir les résultats.",
-            "TitleActif": "Entrer vos actifs",
+            "TitleActif": "Vos actifs",
             "cash": "Argent liquide",
             "gold_value": "Valeur actuelle de l'or",
+            "gold_have": "Or physique détenu",
             "investments": "Investissements",
             "real_estate": "Biens destinés à la revente",
-            "debts": "Dettes immédiates",
+            "debts": "Vos dettes",
             "calculate_zakat": "Calculer la Zakat",
             "result": "Résultat",
             "total_assets": "Total soumis à la Zakat",
@@ -183,6 +186,11 @@ st.markdown(
             background: none;
             border: none;
             cursor: pointer;
+        }
+        .custom-expander-header {
+            font-size: 24px !important;
+            font-weight: bold !important;
+            padding: 10px 0;
         }
     </style>
     <div class="language-selector">
@@ -277,10 +285,16 @@ nisab = gold_price * 85
 if "show_inflation_module" not in st.session_state:
     st.session_state.show_inflation_module = False
 
-with st.expander(f"💰 {translations['TitleActif']}", expanded=True):
+# Personnalisation du titre du module
+
+
+with st.expander("Remplissez pour calculer", expanded=True):
     #cash = sidebar.number_input(f"💰 {translations['cash']}", min_value=0.0, format="%.2f")
+    # Ajouter un titre personnalisé avec un style CSS
+    st.markdown('<div class="custom-expander-header">💰 {}</div>'.format(translations['TitleActif']), unsafe_allow_html=True)
+
     cash = sidebar.number_input(f"💰 {translations['cash']}", min_value=0.0, format="%.2f", help="Argent en votre possession")
-    gold = sidebar.number_input(f"🏅 {translations['gold_value']}", min_value=0.0, format="%.2f", help="Valeur actuelle totale de l'or possédé")
+    gold = sidebar.number_input(f"🏅 {translations['gold_have']}", min_value=0.0, format="%.2f", help="Valeur actuelle totale de l'or possédé")
     investments = sidebar.number_input(f"📈 {translations['investments']}", min_value=0.0, format="%.2f", help="Total des investissements (actions, crypto, etc.)")
     real_estate_resale = sidebar.number_input(f"🏠 {translations['real_estate']}", min_value=0.0, format="%.2f", help="Valeur des biens destinés à la revente")
 
@@ -302,7 +316,8 @@ with st.expander(f"💰 {translations['TitleActif']}", expanded=True):
 
 
 
-    sidebar.header(f"💳 {translations['debts']}")
+    #sidebar.header(f"💳 {translations['debts']}")
+    st.markdown('<div class="custom-expander-header">💳 {}</div>'.format(translations['debts']), unsafe_allow_html=True)
     debts = sidebar.number_input(f"💳 {translations['debts']}", min_value=0.0, format="%.2f", help="Montant total des dettes immédiates")
 
     
@@ -371,5 +386,4 @@ if cash > 0 or gold > 0 or investments > 0 or real_estate_resale > 0 or debts > 
             file_name="zakat_data.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-else:
-    sidebar.warning(f"❌ {translations['not_due']}")
+    
