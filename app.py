@@ -42,7 +42,14 @@ def set_language(language):
             "compare_assets": "Assets vs Nisab Comparison",
             "refresh_gold_price": "Refresh Gold Price",
             "last_update": "Last Update",
-            "zakat_chart_title": "Assets vs Nisab Comparison"
+            "zakat_chart_title": "Assets vs Nisab Comparison",
+            "expander_label": "➕ Reevaluate the current value of your asset",
+            "header": "📈 Price Adjustment for Inflation",
+            "initial_value": "Initial Value (€)",
+            "years": "Years Passed",
+            "inflation_rate": "Annual Inflation Rate (%)",
+            "calculate": "📊 Calculate Adjusted Value",
+            "result": "💰 Adjusted Value after Inflation:"
         }
     elif language == "العربية":  # Ajuster pour un affichage correct en arabe
         return {
@@ -52,7 +59,7 @@ def set_language(language):
             "TitleActif": "أدخل أصولك",
             "cash": "نقد",
             "gold_value": "القيمة الحالية للذهب",
-            "investments": "الاستثمارات)",
+            "investments": "الاستثمارات",
             "real_estate": "العقارات للبيع",
             "debts": "الديون الفورية",
             "calculate_zakat": "احسب الزكاة",
@@ -61,12 +68,19 @@ def set_language(language):
             "nisab": "الحد الأدنى للنصاب",
             "zakat_due": "الزكاة المستحقة",
             "not_due": "أنت لست ملزمًا بدفع الزكاة هذه السنة",
-            "download_pdf": "تحميل PDF",
-            "download_excel": "تحميل Excel",
+            "download_pdf": "PDF تحميل",
+            "download_excel": "Excel تحميل",
             "compare_assets": "مقارنة الأصول مع النصاب",
             "refresh_gold_price": "تحديث سعر الذهب",
             "last_update": "آخر تحديث",
-            "zakat_chart_title": "مقارنة الأصول مع النصاب"
+            "zakat_chart_title": "مقارنة الأصول مع النصاب",
+            "expander_label": "إعادة تقييم القيمة الحالية لممتلكاتك ➕",
+            "header": "تعديل السعر حسب التضخم 📈",
+            "initial_value": "(€) القيمة الأولية",
+            "years": "عدد السنوات المنقضية",
+            "inflation_rate": "(%)معدل التضخم السنوي",
+            "calculate": "حساب القيمة المعدلة 📊",
+            "result": ": القيمة المعدلة بعد التضخم 💰"
         }
     else:  # Français par défaut
         return {
@@ -90,7 +104,14 @@ def set_language(language):
             "compare_assets": "Comparaison Actifs vs Nisab",
             "refresh_gold_price": "Actualiser le prix de l'or",
             "last_update": "Dernière mise à jour",
-            "zakat_chart_title": "Comparaison Actifs vs Nisab"
+            "zakat_chart_title": "Comparaison Actifs vs Nisab",
+            "expander_label": "➕ Réevaluez la valeur actuelle de votre bien",
+            "header": "📈 Ajustement du prix selon l'inflation",
+            "initial_value": "Valeur initiale (€)",
+            "years": "Nombre d'années écoulées",
+            "inflation_rate": "Taux d'inflation annuel (%)",
+            "calculate": "📊 Calculer la valeur ajustée",
+            "result": "💰 Valeur ajustée après inflation :"
         }
 
 # HTML et CSS pour afficher les drapeaux en haut à droite
@@ -252,6 +273,9 @@ with col2:
 
 nisab = gold_price * 85
 
+# Ajout d'un état pour afficher ou non le module d'inflation
+if "show_inflation_module" not in st.session_state:
+    st.session_state.show_inflation_module = False
 
 with st.expander(f"💰 {translations['TitleActif']}", expanded=True):
     #cash = sidebar.number_input(f"💰 {translations['cash']}", min_value=0.0, format="%.2f")
@@ -260,9 +284,28 @@ with st.expander(f"💰 {translations['TitleActif']}", expanded=True):
     investments = sidebar.number_input(f"📈 {translations['investments']}", min_value=0.0, format="%.2f", help="Total des investissements (actions, crypto, etc.)")
     real_estate_resale = sidebar.number_input(f"🏠 {translations['real_estate']}", min_value=0.0, format="%.2f", help="Valeur des biens destinés à la revente")
 
+    # Bouton pour afficher / masquer l'ajustement selon l'inflation
+    if st.button(f"{translations['expander_label']}"):
+        st.session_state.show_inflation_module = not st.session_state.show_inflation_module
+
+    # Affichage du module d'inflation (sans imbrication)
+    if st.session_state.show_inflation_module:
+        st.markdown(f"### {translations['header']}")  # Titre du module
+
+        initial_value = st.number_input(translations["initial_value"], min_value=0.0, format="%.2f")
+        years = st.number_input(translations["years"], min_value=0, step=1)
+        inflation_rate = st.number_input(translations["inflation_rate"], min_value=0.0, format="%.2f")
+
+        if st.button(translations["calculate"]):
+            adjusted_value = initial_value * ((1 + inflation_rate / 100) ** years)
+            st.success(f"{translations['result']} {adjusted_value:,.2f} €")
+
+
+
     sidebar.header(f"💳 {translations['debts']}")
     debts = sidebar.number_input(f"💳 {translations['debts']}", min_value=0.0, format="%.2f", help="Montant total des dettes immédiates")
 
+    
 # Fonction pour générer le fichier Excel avec les résultats
 def generate_excel(total_assets, nisab, zakat_due, last_update, gold_price, cash, gold, investments, real_estate_resale, debts):
     # Créer un DataFrame avec les informations pertinentes
@@ -308,7 +351,7 @@ if cash > 0 or gold > 0 or investments > 0 or real_estate_resale > 0 or debts > 
         
         # Graphique interactif
         df = pd.DataFrame({"Catégorie": [translations['total_assets'], translations['nisab']], "Valeur": [total_assets, nisab]})
-        fig = px.bar(df, x="Catégorie", y="Valeur", title=translations['zakat_chart_title'], text_auto='.2f')
+        fig = px.bar(df, x="Catégorie", y="Valeur", text_auto='.2f')
         fig.update_layout(
             font=dict(
                 color="white",
