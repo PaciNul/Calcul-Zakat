@@ -101,7 +101,15 @@ st.markdown(
         #MainMenu {visibility: hidden;}
         footer, header {visibility: hidden;}
         
-        ._container_gzau3_1, ._profileContainer_gzau3_53, .st-emotion-cache-gi0tri {
+        ._container_gzau3_1, .st-emotion-cache-gi0tri {
+            display: none;
+        }
+        ._viewerBadge_nim44_23
+        {
+            display: none;
+        }
+        ._profileContainer_gzau3_53
+        {
             display: none;
         }
         
